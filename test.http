@@ -1,0 +1,30 @@
+GET http://127.0.0.1:8000/api/events HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+    "title": "Lego Convention",
+    "location": "Vaal"
+}
+
+###
+
+POST http://127.0.0.1:8000/api/events HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+    "title": "Lego Convention",
+    "location": "Vaal"
+}
+
+###
+
+PUT http://127.0.0.1:8000/api/events/1 HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+    "title": "Lego Convention",
+    "location": "Vaals"
+}
