@@ -22,6 +22,7 @@ jobs:
 
       - name: Setup Node
         uses: actions/setup-node@v4
+        working-directory: ./deploy
         with:
           node-version: '22'
           cache: 'npm'
