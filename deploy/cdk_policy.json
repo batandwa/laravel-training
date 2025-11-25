@@ -87,7 +87,7 @@
       "Effect": "Allow",
       "Action": "iam:PassRole",
       "Resource": [
-        "arn:aws:iam::*:role/cdk-*",
+        "arn:aws:iam::*:role/cdk-*"
       ],
       "Condition": {
         "StringEquals": {
