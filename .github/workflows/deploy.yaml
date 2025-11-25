@@ -27,6 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Node Dependencies
+        working-directory: ./deploy
         run: npm ci
 
       - name: Login to Amazon ECR
