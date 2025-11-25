@@ -1,0 +1,20 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8083:80"
+    environment:
+      - LARAVEL_STORAGE_PATH=/tmp
+    volumes:
+      - ./api:/var/www
+  
+  api-cli:
+    image: php:8.4-cli
+    volumes:
+      - ./api:/var/www
+
+  db:
+    image: mariadb:12
+    environment:
+      MARIADB_ROOT_PASSWORD: qikaqika
+
