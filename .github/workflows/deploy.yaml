@@ -9,6 +9,7 @@ on:
 env:
   AWS_REGION: eu-west-1
   ECR_REPOSITORY: api
+  VPC_ID: vpc-052ef000932e819c2
 
 jobs:
   build:
@@ -40,15 +41,14 @@ jobs:
         working-directory: ./src
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Debug
-        run: echo ${{ env.AWS_REGION }}
-
       - name: Configure AWS credentials
+        id: credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+          output-credentials: true
 
       - name: Login to Amazon ECR
         # A unique identifier assigned to a specific step within a job in a workflow. 
@@ -63,7 +63,13 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          IMAGE_URL: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "IMAGE_URL=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Debug
+        run: |
+          echo $IMAGE_URL
