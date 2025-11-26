@@ -69,7 +69,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          export image_url="${ECR_REGISTRY}/${ECR_REPOSITORY}:$(date '+%Y%m%d-%H%M%S')""
+          export image_url="${ECR_REGISTRY}/${ECR_REPOSITORY}:$(date '+%Y%m%d-%H%M%S')"
           docker build -t $image_url .
           docker push $image_url
           echo "image_url=${image_url}" >> $GITHUB_OUTPUT
