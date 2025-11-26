@@ -12,7 +12,7 @@ export class DeployStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = Vpc.fromLookup(this, "VPC", {
-      vpcId: "vpc-052ef000932e819c2"
+      vpcId: process.env.VPC_ID
     });
 
     const cluster = new Cluster(this, "APICluster", {
@@ -28,7 +28,7 @@ export class DeployStack extends cdk.Stack {
     });
 
     taskDef.addContainer("echo", {
-      image: ContainerImage.fromRegistry("ealen/echo-server:0.9.2"),
+      image: ContainerImage.fromRegistry(process.env.IMAGE_URL ?? ""),
       memoryLimitMiB: 512,
       portMappings: [{
         containerPort: 3000,
