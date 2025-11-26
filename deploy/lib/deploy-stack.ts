@@ -36,7 +36,7 @@ export class DeployStack extends cdk.Stack {
       executionRole: executionRole,
     });
 
-    taskDef.addContainer("echo", {
+    taskDef.addContainer("api", {
       image: ContainerImage.fromRegistry(process.env.IMAGE_URL ?? ""),
       memoryLimitMiB: 512,
       portMappings: [{
