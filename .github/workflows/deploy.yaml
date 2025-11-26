@@ -68,12 +68,11 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-          IMAGE_URL: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image_url=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          export image_url="${ECR_REGISTRY}/${ECR_REPOSITORY}:$(date '+%Y%m%d-%H%M%S')""
+          docker build -t $image_url .
+          docker push $image_url
+          echo "image_url=${image_url}" >> $GITHUB_OUTPUT
 
   deploy:
     runs-on: ubuntu-latest
@@ -84,7 +83,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Debug
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./deploy/package-lock.json
+
+      - name: Install Node Dependencies
+        working-directory: ./deploy
+        run: npm ci
+
+      - name: Debug using CDK
         working-directory: ./deploy
         env:
           IMAGE_URL: ${{needs.build.outputs.image_url}}
