@@ -28,7 +28,7 @@ export class DeployStack extends cdk.Stack {
     });
 
     taskDef.addContainer("echo", {
-      image: ContainerImage.fromRegistry("ealen/echo-server:0.9.1"),
+      image: ContainerImage.fromRegistry("ealen/echo-server:0.9.2"),
       memoryLimitMiB: 512,
       portMappings: [{
         containerPort: 3000,
