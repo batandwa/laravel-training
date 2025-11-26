@@ -4,6 +4,7 @@ import { Cluster, Compatibility, ContainerImage, FargateService, Protocol, TaskD
 import { LoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancing';
 import { ApplicationLoadBalancer, ApplicationTargetGroup, ListenerAction, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { EcsFargateLaunchTarget } from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
@@ -20,11 +21,19 @@ export class DeployStack extends cdk.Stack {
       vpc
     });
 
+    const executionRole = new Role(this, 'TaskExecutionRole', {
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
+      ],
+    });
+
     const taskDef = new TaskDefinition(this, "TaskDef", {
       family: "api",
       cpu: "512",
       memoryMiB: "1024",
       compatibility: Compatibility.FARGATE,
+      executionRole: executionRole,
     });
 
     taskDef.addContainer("echo", {
@@ -35,6 +44,7 @@ export class DeployStack extends cdk.Stack {
         protocol: Protocol.TCP,
       }]
     });
+
 
     const service = new FargateService(this, 'Service', {
       serviceName: "api",
