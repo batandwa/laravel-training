@@ -1,10 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
-import { IpAddressType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { IpAddressType, Vpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Cluster, Compatibility, ContainerImage, FargateService, Protocol, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
 import { LoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancing';
 import { ApplicationLoadBalancer, ApplicationTargetGroup, ListenerAction, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { EcsFargateLaunchTarget } from 'aws-cdk-lib/aws-stepfunctions-tasks';
-import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import { Role, ServicePrincipal, ManagedPolicy, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
@@ -27,6 +27,17 @@ export class DeployStack extends cdk.Stack {
         ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
       ],
     });
+
+    executionRole.addToPolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        'ecr:GetAuthorizationToken',
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:GetDownloadUrlForLayer',
+        'ecr:BatchGetImage',
+      ],
+      resources: ['*'], // Allow access to all ECR repositories
+    }));
 
     const taskDef = new TaskDefinition(this, "TaskDef", {
       family: "api",
@@ -51,12 +62,22 @@ export class DeployStack extends cdk.Stack {
       cluster,
       taskDefinition: taskDef,
       minHealthyPercent: 100,
+      // Assign public IP to ensure the task can access ECR
+      assignPublicIp: true,
+      // Explicitly use public subnets for internet access
+      vpcSubnets: {
+        subnetType: SubnetType.PUBLIC
+      }
     });
 
     const lb = new ApplicationLoadBalancer(this, "LB", {
       vpc,
       internetFacing: true,
       loadBalancerName: "external-api",
+      // Explicitly use public subnets for the ALB
+      vpcSubnets: {
+        subnetType: SubnetType.PUBLIC
+      }
     });
 
     const listener = lb.addListener("ALBListener", {
