@@ -54,7 +54,9 @@ export class InfrastructureStack extends cdk.Stack {
       }),
       instanceType: InstanceType.of(InstanceClass.T4G, InstanceSize.MICRO),
       subnetGroup: dbSubnetGroup,
-      credentials: Credentials.fromGeneratedSecret('api'),
+      credentials: Credentials.fromGeneratedSecret('api', {
+        secretName: "api-db",
+      }),
     });
   }
 }
