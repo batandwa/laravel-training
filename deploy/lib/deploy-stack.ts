@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { IpAddressType, Vpc } from 'aws-cdk-lib/aws-ec2';
-import { Cluster, Compatibility, ContainerImage, FargateService, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
+import { Cluster, Compatibility, ContainerImage, FargateService, Protocol, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
 import { LoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancing';
 import { ApplicationLoadBalancer, ApplicationTargetGroup, ListenerAction, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { EcsFargateLaunchTarget } from 'aws-cdk-lib/aws-stepfunctions-tasks';
@@ -27,9 +27,13 @@ export class DeployStack extends cdk.Stack {
       compatibility: Compatibility.FARGATE,
     });
 
-    taskDef.addContainer("Echo", {
+    taskDef.addContainer("echo", {
       image: ContainerImage.fromRegistry("ealen/echo-server:0.9.1"),
       memoryLimitMiB: 512,
+      portMappings: [{
+        containerPort: 3000,
+        protocol: Protocol.TCP,
+      }]
     });
 
     const service = new FargateService(this, 'Service', {
