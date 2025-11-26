@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - deploy/**/*
+      - src/**/*
   workflow_dispatch:
 
 env:
@@ -39,7 +42,7 @@ jobs:
 
       - name: Install Node Dependencies
         working-directory: ./deploy
-        run: npm ci
+        run: npm clean-install
 
       - name: Install Dependencies
         working-directory: ./src
@@ -105,7 +108,7 @@ jobs:
           output-credentials: true
           mask-aws-account-id: false
 
-      - name: Debug using CDK
+      - name: Deploy using CDK
         working-directory: ./deploy
         env:
           IMAGE_URL: ${{needs.build.outputs.image_url}}
