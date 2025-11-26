@@ -35,6 +35,9 @@ jobs:
         working-directory: ./src
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Debug
+        run: echo ${{ env.AWS_REGION }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
