@@ -46,12 +46,13 @@ jobs:
 
       - name: Configure AWS credentials
         id: credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           output-credentials: true
+          mask-aws-account-id: false
 
       - name: Login to Amazon ECR
         # A unique identifier assigned to a specific step within a job in a workflow. 
