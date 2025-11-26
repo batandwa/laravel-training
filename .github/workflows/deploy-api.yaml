@@ -112,4 +112,4 @@ jobs:
           ACCOUNT_ID: ${{needs.build.outputs.account_id}}
         run: |
           echo $IMAGE_URL
-          npx cdk deploy
+          npx cdk deploy --require-approval=never
