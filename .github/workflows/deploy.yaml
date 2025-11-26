@@ -17,6 +17,7 @@ jobs:
 
     outputs:
       image_url: ${{ steps.build-image.outputs.image_url }}
+      account_id: ${{ steps.credentials.outputs.aws-account-id }}
 
     steps:
       - name: Checkout
@@ -98,7 +99,7 @@ jobs:
         working-directory: ./deploy
         env:
           IMAGE_URL: ${{needs.build.outputs.image_url}}
-          ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
+          ACCOUNT_ID: ${{needs.build.outputs.account_id}}
         run: |
           echo $IMAGE_URL
           npx cdk deploy
