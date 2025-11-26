@@ -31,14 +31,9 @@ jobs:
         working-directory: ./deploy
         run: npm ci
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
       - name: Install Dependencies
         working-directory: ./src
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -47,15 +42,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Login to Amazon ECR
+        # A unique identifier assigned to a specific step within a job in a workflow. 
+        # It is used to reference the output of that step in subsequent steps, 
+        # allowing for better organization and control of the workflow's execution.
+        # We use this later to get the registry URL.
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build a docker container and
-          # push it to ECR so that it can
-          # be deployed to ECS.
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
