@@ -40,7 +40,7 @@ export class DeployStack extends cdk.Stack {
       image: ContainerImage.fromRegistry(process.env.IMAGE_URL ?? ""),
       memoryLimitMiB: 512,
       portMappings: [{
-        containerPort: 3000,
+        containerPort: 80,
         protocol: Protocol.TCP,
       }]
     });
