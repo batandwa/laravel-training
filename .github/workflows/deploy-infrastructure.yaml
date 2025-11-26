@@ -1,0 +1,49 @@
+name: infrastructure-deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-1
+  ECR_REPOSITORY: api
+  VPC_ID: vpc-052ef000932e819c2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./infrastructure/package-lock.json
+
+      - name: Install Node Dependencies
+        working-directory: ./infrastructure
+        run: npm ci
+
+      - name: Configure AWS credentials
+        id: credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          output-credentials: true
+          mask-aws-account-id: false
+
+      - name: Debug using CDK
+        working-directory: ./infrastructure
+        env:
+          ACCOUNT_ID: ${{needs.build.outputs.account_id}}
+        run: |
+          echo $IMAGE_URL
+          npx cdk deploy --require-approval=never
