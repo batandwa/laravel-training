@@ -84,7 +84,8 @@ jobs:
       - name: Debug
         working-directory: ./deploy
         env:
-          ACCOUNT_ID: ${{needs.build.outputs.image_url}}
+          IMAGE_URL: ${{needs.build.outputs.image_url}}
+          ACCOUNT_ID: ${{ vars.ACCOUNT_ID }}
         run: |
           echo $IMAGE_URL
           npx cdk deploy
