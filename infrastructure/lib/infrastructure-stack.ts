@@ -3,7 +3,9 @@ import { Instance, InstanceClass, InstanceSize, InstanceType, Vpc, SubnetType } 
 import { Repository, TagMutability } from 'aws-cdk-lib/aws-ecr';
 import { ArnPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { ClusterInstance, DatabaseCluster, DatabaseClusterEngine, DatabaseInstance, DatabaseInstanceEngine, MariaDbEngineVersion, MysqlEngineVersion, SubnetGroup, Credentials } from 'aws-cdk-lib/aws-rds';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
+import { RemovalPolicy } from 'aws-cdk-lib';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -44,19 +46,33 @@ export class InfrastructureStack extends cdk.Stack {
       vpcSubnets: {
         subnetType: SubnetType.PUBLIC
       },
-      description: 'Public RDS instance'
+      description: 'Public RDS instance',
     });
+
+    const dbSecret = new Secret(this, 'DatabaseSecret', {
+      secretName: process.env.DB_SECRET_NAME || 'api-db',
+      generateSecretString: {
+        secretStringTemplate: JSON.stringify({ username: 'api' }),
+        generateStringKey: 'password',
+      },
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    cdk.Tags.of(dbSecret).add('project', 'api');
 
     const cluster = new DatabaseInstance(this, 'Database', {
       vpc,
       engine: DatabaseInstanceEngine.mariaDb({
-        version: MariaDbEngineVersion.VER_10_11
+        version: MariaDbEngineVersion.VER_10_11,
       }),
       instanceType: InstanceType.of(InstanceClass.T4G, InstanceSize.MICRO),
       subnetGroup: dbSubnetGroup,
-      credentials: Credentials.fromGeneratedSecret('api', {
-        secretName: "api-db",
-      }),
+      credentials: Credentials.fromSecret(dbSecret),
+    });
+
+    new cdk.CfnOutput(this, 'DatabaseSecretArnOutput', {
+      value: dbSecret.secretArn,
+      exportName: 'DatabaseSecretArn',
     });
   }
 }
