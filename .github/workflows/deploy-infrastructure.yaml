@@ -40,10 +40,11 @@ jobs:
           output-credentials: true
           mask-aws-account-id: false
 
-      - name: Debug using CDK
+      - name: Deploy using CDK
         working-directory: ./infrastructure
         env:
-          ACCOUNT_ID: ${{needs.build.outputs.account_id}}
+          ACCOUNT_ID: ${{ steps.credentials.outputs.aws-account-id }}
         run: |
-          echo $IMAGE_URL
+          echo $ACCOUNT_ID
+          echo $VPC_ID
           npx cdk deploy --require-approval=never
