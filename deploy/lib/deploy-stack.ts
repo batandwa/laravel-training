@@ -1,10 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 import { IpAddressType, Vpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
-import { Cluster, Compatibility, ContainerImage, FargateService, Protocol, TaskDefinition } from 'aws-cdk-lib/aws-ecs';
+import { Cluster, Compatibility, ContainerImage, FargateService, Protocol, TaskDefinition, Secret } from 'aws-cdk-lib/aws-ecs';
 import { LoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancing';
 import { ApplicationLoadBalancer, ApplicationTargetGroup, ListenerAction, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { EcsFargateLaunchTarget } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { Role, ServicePrincipal, ManagedPolicy, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Secret as SecretsManagerSecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
@@ -36,7 +37,7 @@ export class DeployStack extends cdk.Stack {
         'ecr:GetDownloadUrlForLayer',
         'ecr:BatchGetImage',
       ],
-      resources: ['*'], // Allow access to all ECR repositories
+      resources: ['*'],
     }));
 
     const taskDef = new TaskDefinition(this, "TaskDef", {
@@ -47,13 +48,45 @@ export class DeployStack extends cdk.Stack {
       executionRole: executionRole,
     });
 
+    executionRole.addToPolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        'secretsmanager:GetSecretValue',
+      ],
+      resources: [
+        `arn:aws:secretsmanager:${this.region}:${this.account}:secret:api-db*`,
+      ],
+    }));
+
     taskDef.addContainer("api", {
       image: ContainerImage.fromRegistry(process.env.IMAGE_URL ?? ""),
       memoryLimitMiB: 512,
       portMappings: [{
         containerPort: 80,
         protocol: Protocol.TCP,
-      }]
+      }],
+      secrets: {
+        DB_HOST: Secret.fromSecretsManager(
+          SecretsManagerSecret.fromSecretNameV2(this, 'DBHostSecret', 'api-db!host'),
+          'host'
+        ),
+        DB_PORT: Secret.fromSecretsManager(
+          SecretsManagerSecret.fromSecretNameV2(this, 'DBPortSecret', 'api-db!port'),
+          'port'
+        ),
+        DB_DATABASE: Secret.fromSecretsManager(
+          SecretsManagerSecret.fromSecretNameV2(this, 'DBDatabaseSecret', 'api-db!dbname'),
+          'dbname'
+        ),
+        DB_USERNAME: Secret.fromSecretsManager(
+          SecretsManagerSecret.fromSecretNameV2(this, 'DBUsernameSecret', 'api-db!username'),
+          'username'
+        ),
+        DB_PASSWORD: Secret.fromSecretsManager(
+          SecretsManagerSecret.fromSecretNameV2(this, 'DBPasswordSecret', 'api-db!password'),
+          'password'
+        ),
+      },
     });
 
 
@@ -63,11 +96,11 @@ export class DeployStack extends cdk.Stack {
       taskDefinition: taskDef,
       minHealthyPercent: 100,
       // Assign public IP to ensure the task can access ECR
-      assignPublicIp: true,
+      // assignPublicIp: true,
       // Explicitly use public subnets for internet access
-      vpcSubnets: {
-        subnetType: SubnetType.PUBLIC
-      }
+      // vpcSubnets: {
+      //   subnetType: SubnetType.PUBLIC
+      // }
     });
 
     const lb = new ApplicationLoadBalancer(this, "LB", {
@@ -81,7 +114,7 @@ export class DeployStack extends cdk.Stack {
     });
 
     const listener = lb.addListener("ALBListener", {
-      port: 80
+      port: 80,
     });
 
     listener.addAction("DefaultAction", {
@@ -98,7 +131,10 @@ export class DeployStack extends cdk.Stack {
     const applicationTargetGroup = new ApplicationTargetGroup(this, "api", {
         port: 80,
         vpc,
-        targets: [service]
+        targets: [service],
+        healthCheck: {
+          path: '/up',
+        },
       },
     );
 
