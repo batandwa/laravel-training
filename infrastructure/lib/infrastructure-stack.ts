@@ -5,11 +5,22 @@ import { ArnPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { ClusterInstance, DatabaseCluster, DatabaseClusterEngine, DatabaseInstance, DatabaseInstanceEngine, MariaDbEngineVersion, MysqlEngineVersion, SubnetGroup, Credentials } from 'aws-cdk-lib/aws-rds';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
-import { RemovalPolicy } from 'aws-cdk-lib';
+import { CfnResource, IAspect, RemovalPolicy } from 'aws-cdk-lib';
+import { IConstruct } from 'constructs';
+
+class DestroyRemovalPolicyAspect implements IAspect {
+  public visit(node: IConstruct): void {
+    if (node instanceof CfnResource) {
+      node.applyRemovalPolicy(RemovalPolicy.DESTROY);
+    }
+  }
+}
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    cdk.Aspects.of(this).add(new DestroyRemovalPolicyAspect());
 
     const vpc = Vpc.fromLookup(this, "VPC", {
       vpcId: process.env.VPC_ID
@@ -54,8 +65,8 @@ export class InfrastructureStack extends cdk.Stack {
       generateSecretString: {
         secretStringTemplate: JSON.stringify({ username: 'api' }),
         generateStringKey: 'password',
+        excludeCharacters: ' %+~`#$&*()|[]{}:;<>?!\'/@"\\',
       },
-      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     cdk.Tags.of(dbSecret).add('project', 'api');
