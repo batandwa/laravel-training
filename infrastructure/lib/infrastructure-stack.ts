@@ -29,8 +29,9 @@ export class InfrastructureStack extends cdk.Stack {
     const ecrRepo = new Repository(this, "Repo", {
       repositoryName: "api",
       imageTagMutability: TagMutability.IMMUTABLE,
+      emptyOnDelete: true,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
-
 
     const authorisationAccountsPermission = new PolicyStatement({
       sid: "Access to Repositories",
